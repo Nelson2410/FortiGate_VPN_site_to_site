@@ -121,7 +121,7 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 
 1. **Cloner le dépôt**
 ```bash
-git clone https://github.com/votre-username/FortiGate_VPN_S2S.git
+git clone https://github.com/Nelson2410/FortiGate_VPN_S2S.git
 cd FortiGate_VPN_S2S
 ```
 
