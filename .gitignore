@@ -1,24 +1,48 @@
+# Les trucs inutiles — fichiers générés / personnels à ignorer
+
 # OS
 .DS_Store
 Thumbs.db
 desktop.ini
-ehthumbs.db
-Icon?
 
-# Editor
+# Editors / IDEs
 .vscode/
-.idea/
-*.iml
-*.sublime-project
-*.sublime-workspace
-
-# Temporary / swap
-*~
+*.code-workspace
+*~      # backup files
 *.swp
-*.tmp
+*.swo
+
+# Languages / envs / builds
+node_modules/
+dist/
+build/
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Infrastructure / tooling
+.terraform/
+*.tfstate
+*.tfstate.backup
+.vagrant/
+docker-compose.override.yml
+
+# Logs / backups / temp
+*.log
 *.bak
+*.backup
+*.tmp
 *.old
+*.save
 *.orig
 
-# Logs
-*.log
+# Coverage / caches
+.coverage
+coverage/
+htmlcov/
+.cache/
