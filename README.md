@@ -17,13 +17,6 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 - **Routage inter-VLAN** et **inter-site** transparent
 - **Services DHCP** automatisés par VLAN et sécurisés (Snooping, DAI)
 
-### Objectifs
-- Déployer une infrastructure réseau multi-sites sécurisée.
-- Maîtriser les concepts FortiGate (firewall policies, zones, VPN IPsec, DHCP).
-- Simuler un environnement d'entreprise réaliste (Best Practices Cisco L2) pour la formation et les tests.
-
----
-
 ## Architecture et Segmentation
 
 ![Topologie réseau](1%20-%20Docs/Topologie.png)
@@ -45,24 +38,101 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 | 60   | Contrib      | 10.10.60.0/24    | 10.10.60.254           | Contributeurs     |
 
 ---
+## Fonctionnalités clés
 
-## Guide de Déploiement et Bonnes Pratiques
+### Sécurité
+- Tunnel VPN IPsec avec chiffrement AES-256
+- Zones de sécurité (ZONE_LAN_A, ZONE_LAN_B, ZONE_VPN, ZONE_WAN)
+- Firewall policies granulaires par direction de trafic
+- DHCP Snooping + Dynamic ARP Inspection sur les switches
+- Port Security avec MAC sticky
 
-Pour garantir le succès du laboratoire et éviter les erreurs courantes de dépendance (rejet de commandes par les équipements ou blocage du trafic légitime), les fichiers du dossier `2 - Configs/` ont été structurés selon une **chronologie stricte**. 
+### Routage
+- Routage inter-VLAN assuré par les FortiGate
+- Routage inter-site via tunnel VPN (sans NAT)
+- Route par défaut vers Internet avec NAT
 
-Un copier-coller intégral des scripts fonctionnera du premier coup, car il respecte la logique d'initialisation suivante :
+### Services
+- DHCP automatique par VLAN (plages .100-.200)
+- DNS configuré via DHCP
+- Spanning Tree avec PortFast et BPDU Guard
+---
 
-### 1. Séquence de configuration des Commutateurs Cisco
-* **VLANs en premier :** Création de l'infrastructure logique de base.
-* **Liaisons de confiance (Trunk) :** Le port Trunk vers le FortiGate est configuré avec l'encapsulation `dot1q` et déclaré comme fiable (`trust`) pour le DHCP Snooping et l'ARP Inspection.
-* **Ports utilisateurs :** Configuration des accès avec `spanning-tree portfast` (vital pour ne pas court-circuiter les requêtes DHCP initiales) et le Port-Security.
-* **Sécurité globale en dernier :** Activation du *DHCP Snooping* et du *Dynamic ARP Inspection (DAI)* uniquement à la fin. *Activer ces mécanismes avant de déclarer les ports de confiance bloquerait instantanément tout le trafic.*
+## Stack technologique
 
-### 2. Séquence de configuration des FortiGate
-* **Fondations réseau :** Interfaces physiques, sous-interfaces VLAN (802.1Q) et activation immédiate des serveurs DHCP. Le pare-feu doit être prêt à répondre avant que les switchs n'activent leur inspection ARP.
-* **Phase 1 IPsec :** La configuration de la Phase 1 est prioritaire car elle génère l'**interface virtuelle dynamique** du tunnel VPN (ex: `VPN_A_B`).
-* **Zones & Routage :** Sans la Phase 1 préalablement créée, l'ajout de routes statiques vers le site distant ou la création de Zones de sécurité ciblant le VPN échouerait.
-* **Firewall Policies :** Rédigées en toute fin de script, elles peuvent s'appuyer sereinement sur les Zones de sécurité (LAN, WAN, VPN) et les interfaces désormais existantes.
+### Plateforme
+- **EVE-NG** : Environnement de virtualisation réseau
+- **Hyperviseur** : VMware / Proxmox (selon infrastructure)
+
+### Équipements
+- **Pare-feu** : 2× FortiGate v7
+- **Switches** : 2× vIOS-L2 (Cisco IOS)
+- **Hôtes** : VPCS / VM Linux
+
+### Protocoles & technologies
+- **VPN** : IPsec (IKEv2)
+  - Phase 1 : AES-256 + SHA-256/SHA-1, DH Group 14
+  - Phase 2 : AES-256, Perfect Forward Secrecy
+  - PSK : `FortiVPN@2026`
+- **Routage** : Routes statiques + routage inter-VLAN
+- **Sécurité** : Zones de sécurité, firewall policies, NAT
+- **Services** : DHCP par VLAN, DHCP Snooping, DAI, Port Security
+---
+
+## Tests de validation
+
+### Tests de connectivité
+
+```bash
+# Depuis un hôte VLAN 10 (Site A)
+ping 10.10.20.100    # Test inter-VLAN local
+ping 10.10.40.100    # Test inter-site via VPN
+ping 8.8.8.8         # Test sortie Internet
+
+# Vérifier le tunnel VPN
+# Sur FortiGate-A/B
+diagnose vpn ike gateway list
+diagnose vpn tunnel list
+get router info routing-table all
+```
+
+### Monitoring
+
+```bash
+# Logs VPN
+diagnose debug application ike -1
+diagnose debug enable
+
+# Traffic firewall
+diagnose sniffer packet any 'host 10.10.10.100' 4
+```
+---
+## Preuves de réussite (Validation du Lab)
+
+### 1. État du Tunnel VPN IPsec
+![Statut VPN](1%20-%20Docs/Capture-1.png)
+*Le tunnel IPsec est établi (UP) avec une négociation réussie des phases 1 et 2, confirmée par l'échange de paquets chiffrés (TX/RX).*
+
+### 2. Connectivité Inter-Site (Ping)
+![Ping Inter-Site](1%20-%20Docs/Capture-2.png)
+*Test de ping réussi entre le PC du Site A (VLAN 10) et le PC du Site B (VLAN 40) à travers le tunnel sécurisé.*
+
+### 3. Accès Internet et Sortie WAN
+![Sortie Internet](1%20-%20Docs/Capture-3.png)
+*Validation de la sortie Internet et de la résolution DNS depuis les différents VLANs du LAN.*
+
+### 4. Attribution DHCP et Services locaux
+![DHCP Leases](1%20-%20Docs/Capture-4.png)
+*Confirmation de l'attribution dynamique des adresses IP par le FortiGate et du bon fonctionnement du routage inter-VLAN.*
+
+---
+
+## Guide de Déploiement
+
+Pour garantir le succès du laboratoire, les fichiers du dossier `2 - Configs/` respectent une chronologie stricte évitant tout rejet de commande :
+
+1. **Switchs Cisco** : Configuration des VLANs, puis des Trunks de confiance (`trust`), et enfin activation globale du DHCP Snooping/DAI.
+2. **FortiGate** : Création des interfaces et DHCP en premier, suivi de la Phase 1 IPsec (pour générer l'interface virtuelle), puis du routage et des politiques de sécurité.
 
 ---
 
@@ -71,54 +141,20 @@ Un copier-coller intégral des scripts fonctionnera du premier coup, car il resp
 ```text
 .
 ├── 1 - Docs/
-│   ├── Doc_Technique.pdf     # Documentation détaillée du projet
-│   └── Topologie.png         # Schéma de l'architecture
+│   ├── Doc_Technique.pdf     # Documentation détaillée
+│   ├── Topologie.png         # Schéma réseau
+│   ├── Capture-1.png         # Preuve : Statut VPN
+│   ├── Capture-2.png         # Preuve : Connectivité Inter-site
+│   ├── Capture-3.png         # Preuve : Sortie Internet
+│   └── Capture-4.png         # Preuve : Services DHCP/Routage
 ├── 2 - Configs/
-│   ├── Fortigate-A.conf      # Configuration FortiGate Site A (Prêt à coller)
-│   ├── Fortigate-B.conf      # Configuration FortiGate Site B (Prêt à coller)
-│   ├── Switch-A.conf         # Configuration Switch Site A (Prêt à coller)
-│   └── Switch-B.conf         # Configuration Switch Site B (Prêt à coller)
-├── .gitignore                # Exclusions Git
+│   ├── Fortigate-A.conf      # Config optimisée (Passerelle VMware & Crypto)
+│   ├── Fortigate-B.conf      # Config optimisée (Passerelle VMware & Crypto)
+│   ├── Switch-A.conf         # Config L2 sécurisée
+│   └── Switch-B.conf         # Config L2 sécurisée
 ├── LICENSE                   # Licence MIT
 └── README.md                 # Ce fichier
-
 ```
----
-
-## Dépannage
-
-### Le tunnel VPN ne monte pas
-
-```bash
-# Vérifier la connectivité WAN
-execute ping 192.168.200.30
-
-# Vérifier les paramètres Phase 1/2
-show vpn ipsec phase1-interface
-show vpn ipsec phase2-interface
-
-# Vérifier les policies
-show firewall policy
-```
-
-### Pas de communication inter-VLAN
-
-```bash
-# Vérifier le routage
-get router info routing-table all
-
-# Vérifier les policies de zone
-show firewall policy | grep ZONE_LAN
-```
----
-
-## Documentation
-
-- [Documentation technique complète](1%20-%20Docs/Doc_Technique.pdf)
-- [Topologie réseau](1%20-%20Docs/Topologie.png)
-- [FortiGate Documentation](https://docs.fortinet.com/)
-- [EVE-NG Cookbook](https://www.eve-ng.net/index.php/documentation/)
-
 ---
 
 ## Auteur
@@ -128,4 +164,3 @@ show firewall policy | grep ZONE_LAN
 🔗 [GitHub](https://github.com/Nelson2410)
 
 ---
-
