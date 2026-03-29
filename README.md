@@ -13,192 +13,76 @@
 Ce projet implémente une architecture réseau d'entreprise complète avec :
 - **2 sites géographiquement distants** (LAN A & LAN B)
 - **6 VLANs segmentés** pour différents services métier
-- **Tunnel VPN IPsec** chiffré entre les sites
+- **Tunnel VPN IPsec** chiffré entre les sites (Mode Route-based)
 - **Routage inter-VLAN** et **inter-site** transparent
-- **Services DHCP** automatisés par VLAN
+- **Services DHCP** automatisés par VLAN et sécurisés (Snooping, DAI)
 
 ### Objectifs
-
-- Déployer une infrastructure réseau multi-sites sécurisée
-- Maîtriser les concepts FortiGate (firewall policies, zones, VPN, DHCP)
-- Simuler un environnement d'entreprise réaliste pour la formation et les tests
+- Déployer une infrastructure réseau multi-sites sécurisée.
+- Maîtriser les concepts FortiGate (firewall policies, zones, VPN IPsec, DHCP).
+- Simuler un environnement d'entreprise réaliste (Best Practices Cisco L2) pour la formation et les tests.
 
 ---
 
-## Architecture
+## Architecture et Segmentation
 
 ![Topologie réseau](1%20-%20Docs/Topologie.png)
-    
 
-## Segmentation réseau
+### **Site A** (FortiGate-A & Switch-A)
 
-### **Site A** (LAN A)
+| VLAN | Nom          | Réseau           | Passerelle (FortiGate) | Rôle              |
+|------|--------------|------------------|------------------------|-------------------|
+| 10   | NetAdmin     | 10.10.10.0/24    | 10.10.10.254           | Administration    |
+| 20   | SysAdmin     | 10.10.20.0/24    | 10.10.20.254           | Systèmes          |
+| 30   | NetDev       | 10.10.30.0/24    | 10.10.30.254           | Développement     |
 
-| VLAN | Nom          | Réseau           | Passerelle    | Rôle              |
-|------|--------------|------------------|---------------|-------------------|
-| 10   | NetAdmin     | 10.10.10.0/24    | 10.10.10.254  | Administrateurs réseau |
-| 20   | SysAdmin     | 10.10.20.0/24    | 10.10.20.254  | Administrateurs système |
-| 30   | NetDev       | 10.10.30.0/24    | 10.10.30.254  | Développeurs réseau |
+### **Site B** (FortiGate-B & Switch-B)
 
-### **Site B** (LAN B)
-
-| VLAN | Nom          | Réseau           | Passerelle    | Rôle              |
-|------|--------------|------------------|---------------|-------------------|
-| 40   | Testeurs     | 10.10.40.0/24    | 10.10.40.254  | Équipe QA/Test    |
-| 50   | Managers     | 10.10.50.0/24    | 10.10.50.254  | Management        |
-| 60   | Contributors | 10.10.60.0/24    | 10.10.60.254  | Contributeurs     |
-
-### **Interconnexion WAN**
-
-| Équipement   | Interface | IP WAN          | Rôle          |
-|--------------|-----------|-----------------|---------------|
-| FortiGate-A  | port1     | 192.168.200.20  | Endpoint VPN A |
-| FortiGate-B  | port1     | 192.168.200.30  | Endpoint VPN B |
+| VLAN | Nom          | Réseau           | Passerelle (FortiGate) | Rôle              |
+|------|--------------|------------------|------------------------|-------------------|
+| 40   | Testeurs     | 10.10.40.0/24    | 10.10.40.254           | QA & Tests        |
+| 50   | Managers     | 10.10.50.0/24    | 10.10.50.254           | Direction         |
+| 60   | Contrib      | 10.10.60.0/24    | 10.10.60.254           | Contributeurs     |
 
 ---
 
-## Stack technologique
+## Guide de Déploiement et Bonnes Pratiques
 
-### Plateforme
-- **EVE-NG** : Environnement de virtualisation réseau
-- **Hyperviseur** : VMware / Proxmox (selon infrastructure)
+Pour garantir le succès du laboratoire et éviter les erreurs courantes de dépendance (rejet de commandes par les équipements ou blocage du trafic légitime), les fichiers du dossier `2 - Configs/` ont été structurés selon une **chronologie stricte**. 
 
-### Équipements
-- **Pare-feu** : 2× FortiGate v7
-- **Switches** : 2× vIOS-L2 (Cisco IOS)
-- **Hôtes** : VPCS / VM Linux
+Un copier-coller intégral des scripts fonctionnera du premier coup, car il respecte la logique d'initialisation suivante :
 
-### Protocoles & technologies
-- **VPN** : IPsec (IKEv2)
-  - Phase 1 : AES-256 + SHA-256/SHA-1, DH Group 14
-  - Phase 2 : AES-256, Perfect Forward Secrecy
-  - PSK : `FortiVPN@2026`
-- **Routage** : Routes statiques + routage inter-VLAN
-- **Sécurité** : Zones de sécurité, firewall policies, NAT
-- **Services** : DHCP par VLAN, DHCP Snooping, DAI, Port Security
+### 1. Séquence de configuration des Commutateurs Cisco
+* **VLANs en premier :** Création de l'infrastructure logique de base.
+* **Liaisons de confiance (Trunk) :** Le port Trunk vers le FortiGate est configuré avec l'encapsulation `dot1q` et déclaré comme fiable (`trust`) pour le DHCP Snooping et l'ARP Inspection.
+* **Ports utilisateurs :** Configuration des accès avec `spanning-tree portfast` (vital pour ne pas court-circuiter les requêtes DHCP initiales) et le Port-Security.
+* **Sécurité globale en dernier :** Activation du *DHCP Snooping* et du *Dynamic ARP Inspection (DAI)* uniquement à la fin. *Activer ces mécanismes avant de déclarer les ports de confiance bloquerait instantanément tout le trafic.*
+
+### 2. Séquence de configuration des FortiGate
+* **Fondations réseau :** Interfaces physiques, sous-interfaces VLAN (802.1Q) et activation immédiate des serveurs DHCP. Le pare-feu doit être prêt à répondre avant que les switchs n'activent leur inspection ARP.
+* **Phase 1 IPsec :** La configuration de la Phase 1 est prioritaire car elle génère l'**interface virtuelle dynamique** du tunnel VPN (ex: `VPN_A_B`).
+* **Zones & Routage :** Sans la Phase 1 préalablement créée, l'ajout de routes statiques vers le site distant ou la création de Zones de sécurité ciblant le VPN échouerait.
+* **Firewall Policies :** Rédigées en toute fin de script, elles peuvent s'appuyer sereinement sur les Zones de sécurité (LAN, WAN, VPN) et les interfaces désormais existantes.
 
 ---
 
-## Déploiement
+## 📂 Structure du Répertoire
 
-### Prérequis
-
-```bash
-✓ EVE-NG installé et fonctionnel
-✓ Images FortiGate v7 disponibles
-✓ Images vIOS-L2 pour les switches
-✓ Connaissance de base en réseaux IP et VLANs
-```
-
-### Installation
-
-1. **Cloner le dépôt**
-```bash
-git clone https://github.com/Nelson2410/FortiGate_VPN_S2S.git
-cd FortiGate_VPN_S2S
-```
-
-2. **Importer dans EVE-NG**
-   - Créer un nouveau lab
-   - Ajouter 2 FortiGate et 2 switches vIOS-L2
-   - Connecter selon la topologie (voir diagramme)
-
-3. **Appliquer les configurations**
-```bash
-# Sur FortiGate-A
-config restore config flash 2-Configs/Fortigate-A.conf
-
-# Sur FortiGate-B
-config restore config flash 2-Configs/Fortigate-B.conf
-
-# Sur les switches (via CLI)
-copy tftp running-config
-# ou copier-coller depuis 2-Configs/Switch-A.conf et Switch-B.conf
-```
-
-4. **Ajouter les hôtes de test**
-   - Connecter des VPCS sur chaque VLAN
-   - Configurer en DHCP : `ip dhcp`
-
----
-
-## Validation
-
-### Tests de connectivité
-
-```bash
-# Depuis un hôte VLAN 10 (Site A)
-ping 10.10.20.100    # Test inter-VLAN local
-ping 10.10.40.100    # Test inter-site via VPN
-ping 8.8.8.8         # Test sortie Internet
-
-# Vérifier le tunnel VPN
-# Sur FortiGate-A/B
-diagnose vpn ike gateway list
-diagnose vpn tunnel list
-get router info routing-table all
-```
-
-### Monitoring
-
-```bash
-# Logs VPN
-diagnose debug application ike -1
-diagnose debug enable
-
-# Traffic firewall
-diagnose sniffer packet any 'host 10.10.10.100' 4
-```
-
----
-
-## Fonctionnalités clés
-
-### Sécurité
-- Tunnel VPN IPsec avec chiffrement AES-256
-- Zones de sécurité (ZONE_LAN_A, ZONE_LAN_B, ZONE_VPN, ZONE_WAN)
-- Firewall policies granulaires par direction de trafic
-- DHCP Snooping + Dynamic ARP Inspection sur les switches
-- Port Security avec MAC sticky
-
-### Routage
-- Routage inter-VLAN assuré par les FortiGate
-- Routage inter-site via tunnel VPN (sans NAT)
-- Route par défaut vers Internet avec NAT
-
-### Services
-- DHCP automatique par VLAN (plages .100-.200)
-- DNS configuré via DHCP
-- Spanning Tree avec PortFast et BPDU Guard
-
----
-
-## 📁 Structure du projet
-
-```
-FortiGate_VPN_S2S/
+```text
+.
 ├── 1 - Docs/
-│   ├── Doc_Technique.pdf     # Documentation détaillée
-│   └── Topologie.png         # Schéma d'architecture réseau
+│   ├── Doc_Technique.pdf     # Documentation détaillée du projet
+│   └── Topologie.png         # Schéma de l'architecture
 ├── 2 - Configs/
-│   ├── Fortigate-A.conf      # Configuration FortiGate Site A
-│   ├── Fortigate-B.conf      # Configuration FortiGate Site B
-│   ├── Switch-A.conf         # Configuration Switch Site A
-│   └── Switch-B.conf         # Configuration Switch Site B
+│   ├── Fortigate-A.conf      # Configuration FortiGate Site A (Prêt à coller)
+│   ├── Fortigate-B.conf      # Configuration FortiGate Site B (Prêt à coller)
+│   ├── Switch-A.conf         # Configuration Switch Site A (Prêt à coller)
+│   └── Switch-B.conf         # Configuration Switch Site B (Prêt à coller)
 ├── .gitignore                # Exclusions Git
 ├── LICENSE                   # Licence MIT
 └── README.md                 # Ce fichier
+
 ```
-
----
-
-## Cas d'usage
-
-- **Formation** : Apprentissage FortiGate et VPN IPsec
-- **Lab de test** : Validation de configurations avant production
-- **POC** : Démonstration d'architecture multi-sites
-- **Préparation certification** : Entraînement NSE (Network Security Expert)
-
 ---
 
 ## Dépannage
@@ -226,7 +110,6 @@ get router info routing-table all
 # Vérifier les policies de zone
 show firewall policy | grep ZONE_LAN
 ```
-
 ---
 
 ## Documentation
@@ -245,3 +128,4 @@ show firewall policy | grep ZONE_LAN
 🔗 [GitHub](https://github.com/Nelson2410)
 
 ---
+
