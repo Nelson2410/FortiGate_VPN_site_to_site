@@ -8,7 +8,7 @@
 
 ---
 
-## 📋 Vue d'ensemble
+## Vue d'ensemble
 
 Ce projet implémente une architecture réseau d'entreprise complète avec :
 - **2 sites géographiquement distants** (LAN A & LAN B)
@@ -17,7 +17,7 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 - **Routage inter-VLAN** et **inter-site** transparent
 - **Services DHCP** automatisés par VLAN
 
-### 🎯 Objectifs
+### Objectifs
 
 - Déployer une infrastructure réseau multi-sites sécurisée
 - Maîtriser les concepts FortiGate (firewall policies, zones, VPN, DHCP)
@@ -25,39 +25,12 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ![Topologie réseau](1%20-%20Docs/Topologie.png)
+    
 
-### Schéma simplifié
-
-```
-                          ┌─────────────┐
-                          │  Internet   │
-                          │ 192.168.200 │
-                          └──────┬──────┘
-                    ┌────────────┴────────────┐
-                    │                         │
-              .20   │                         │   .30
-         ┌──────────▼────────┐       ┌───────▼──────────┐
-         │   FortiGate-A     │       │   FortiGate-B    │
-         │   (Site A)        │◄─────►│   (Site B)       │
-         └─────────┬─────────┘  VPN  └────────┬─────────┘
-                   │ port2                     │ port2
-              TRUNK│ (VLAN)               TRUNK│ (VLAN)
-         ┌─────────▼─────────┐       ┌────────▼─────────┐
-         │    Switch-A       │       │    Switch-B      │
-         └─┬────────┬────┬───┘       └───┬───────┬───┬──┘
-           │        │    │               │       │   │
-       ┌───▼──┐ ┌──▼──┐ ┌▼────┐      ┌──▼──┐ ┌──▼─┐ ┌▼────┐
-       │VLAN10│ │VLAN │ │VLAN │      │VLAN │ │VLAN│ │VLAN │
-       │Admin │ │  20 │ │ 30  │      │ 40  │ │ 50 │ │ 60  │
-       └──────┘ └─────┘ └─────┘      └─────┘ └────┘ └─────┘
-```
-
----
-
-## 🌐 Segmentation réseau
+## Segmentation réseau
 
 ### **Site A** (LAN A)
 
@@ -84,7 +57,7 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 
 ---
 
-## 🛠️ Stack technologique
+## Stack technologique
 
 ### Plateforme
 - **EVE-NG** : Environnement de virtualisation réseau
@@ -106,7 +79,7 @@ Ce projet implémente une architecture réseau d'entreprise complète avec :
 
 ---
 
-## 🚀 Déploiement
+## Déploiement
 
 ### Prérequis
 
@@ -149,7 +122,7 @@ copy tftp running-config
 
 ---
 
-## ✅ Validation
+## Validation
 
 ### Tests de connectivité
 
@@ -179,21 +152,21 @@ diagnose sniffer packet any 'host 10.10.10.100' 4
 
 ---
 
-## 📊 Fonctionnalités clés
+## Fonctionnalités clés
 
-### 🔒 Sécurité
+### Sécurité
 - Tunnel VPN IPsec avec chiffrement AES-256
 - Zones de sécurité (ZONE_LAN_A, ZONE_LAN_B, ZONE_VPN, ZONE_WAN)
 - Firewall policies granulaires par direction de trafic
 - DHCP Snooping + Dynamic ARP Inspection sur les switches
 - Port Security avec MAC sticky
 
-### 🌍 Routage
+### Routage
 - Routage inter-VLAN assuré par les FortiGate
 - Routage inter-site via tunnel VPN (sans NAT)
 - Route par défaut vers Internet avec NAT
 
-### ⚙️ Services
+### Services
 - DHCP automatique par VLAN (plages .100-.200)
 - DNS configuré via DHCP
 - Spanning Tree avec PortFast et BPDU Guard
@@ -219,7 +192,7 @@ FortiGate_VPN_S2S/
 
 ---
 
-## 🎓 Cas d'usage
+## Cas d'usage
 
 - **Formation** : Apprentissage FortiGate et VPN IPsec
 - **Lab de test** : Validation de configurations avant production
@@ -228,7 +201,7 @@ FortiGate_VPN_S2S/
 
 ---
 
-## 🐛 Dépannage
+## Dépannage
 
 ### Le tunnel VPN ne monte pas
 
@@ -256,7 +229,7 @@ show firewall policy | grep ZONE_LAN
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - [Documentation technique complète](1%20-%20Docs/Doc_Technique.pdf)
 - [Topologie réseau](1%20-%20Docs/Topologie.png)
@@ -265,26 +238,10 @@ show firewall policy | grep ZONE_LAN
 
 ---
 
-## 👤 Auteur
+## Auteur
 
 **Nelson Bandos**  
 📧 nelson.bandos@proton.me  
 🔗 [GitHub](https://github.com/Nelson2410)
 
 ---
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
----
-
-## 🙏 Remerciements
-
-- Fortinet pour FortiGate
-- Communauté EVE-NG
-- Tous les contributeurs réseau open source
-
----
-
-**⭐ Si ce projet vous a été utile, n'hésitez pas à lui donner une étoile !**
