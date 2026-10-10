@@ -1,11 +1,9 @@
-# Les trucs inutiles — fichiers générés / personnels à ignorer
-
 # OS
 .DS_Store
 Thumbs.db
 desktop.ini
 
-# Editors / IDEs
+# IDE
 .vscode/
 *.code-workspace
 *~      # backup files
@@ -24,13 +22,6 @@ __pycache__/
 *.egg-info/
 *.egg
 pip-wheel-metadata/
-
-# Infrastructure / tooling
-.terraform/
-*.tfstate
-*.tfstate.backup
-.vagrant/
-docker-compose.override.yml
 
 # Logs / backups / temp
 *.log
