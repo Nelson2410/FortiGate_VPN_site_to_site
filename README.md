@@ -136,7 +136,7 @@ Pour garantir le succès du laboratoire, les fichiers du dossier `2 - Configs/` 
 
 ---
 
-## 📂 Structure du Répertoire
+## Structure du Répertoire
 
 ```text
 .
@@ -147,20 +147,20 @@ Pour garantir le succès du laboratoire, les fichiers du dossier `2 - Configs/` 
 │   ├── Capture-2.png         # Preuve : Connectivité Inter-site
 │   ├── Capture-3.png         # Preuve : Sortie Internet
 │   └── Capture-4.png         # Preuve : Services DHCP/Routage
-├── 2 - Configs/
-│   ├── Fortigate-A.conf      # Config optimisée (Passerelle VMware & Crypto)
-│   ├── Fortigate-B.conf      # Config optimisée (Passerelle VMware & Crypto)
-│   ├── Switch-A.conf         # Config L2 sécurisée
-│   └── Switch-B.conf         # Config L2 sécurisée
+├── 2 - Configs/              # Configurations
+│   ├── Fortigate-A.conf      
+│   ├── Fortigate-B.conf      
+│   ├── Switch-A.conf        
+│   └── Switch-B.conf         
 ├── LICENSE                   # Licence MIT
-└── README.md                 # Ce fichier
+└── README.md                
 ```
 ---
 
 ## Auteur
 
 **Nelson Bandos**  
-📧 nelson.bandos@proton.me  
+🔗 [LinkedIn](https://www.linkedin.com/in/nelson-bandos/) 
 🔗 [GitHub](https://github.com/Nelson2410)
 
 ---
