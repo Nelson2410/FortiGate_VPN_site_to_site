@@ -160,7 +160,7 @@ Pour garantir le succès du laboratoire, les fichiers du dossier `2 - Configs/` 
 ## Auteur
 
 **Nelson Bandos**  
-🔗 [LinkedIn](https://www.linkedin.com/in/nelson-bandos/) 
-🔗 [GitHub](https://github.com/Nelson2410)
+- 🔗 [LinkedIn](https://www.linkedin.com/in/nelson-bandos/) 
+- 🔗 [GitHub](https://github.com/Nelson2410)
 
 ---
